@@ -1,0 +1,24 @@
+# Completeness checklist
+
+- [ ] Requirements & non-goals documented
+- [ ] Threat model (secrets, webhook spoofing, SSH exposure, prompt injection via inbound email)
+- [ ] Toolchain reproducible (`uv.lock`, pinned Terraform/provider)
+- [ ] Pre-commit + secret scan
+- [ ] IaC complete (network, instance, image, budget)
+- [ ] Free-tier guard
+- [ ] State storage + backup
+- [ ] Capacity runner with error policy + fallback ladder
+- [ ] Idle-reclaim mitigation
+- [ ] Host hardening (SSH, firewall parity with security list, updates, fail2ban)
+- [ ] AgentMail: inbox idempotency, Svix verify or WebSocket, dedupe, allow-list, rate limit
+- [ ] Inbound email treated as untrusted input (no tool execution from email content without policy)
+- [ ] Quality gates: lint, types, tests, coverage, mutation, fuzz, supply-chain scan, SBOM
+- [ ] CI without cloud creds
+- [ ] Observability + alerting
+- [ ] Backups + restore test
+- [ ] Cost guard (budget alerts, `allow_paid` flag)
+- [ ] Teardown tested
+- [ ] Runbook
+- [ ] `docs/DECISIONS.md`
+- [ ] `docs/UNVERIFIED.md` empty or justified
+- [ ] Kimi: `AGENTS.md`, hooks, sandbox, scoped IAM, human-approval gates
