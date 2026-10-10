@@ -1,0 +1,5 @@
+compartment_id = "ocid1.compartment.oc1..<change-me>"
+region         = "us-sanjose-1"
+ssh_public_key = "ssh-ed25519 AAAAC3NzaC..."
+admin_cidr     = "203.0.113.0/32"
+alert_email    = "ops@example.com"

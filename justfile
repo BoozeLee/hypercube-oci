@@ -16,13 +16,17 @@ verify:
     uv run pyright src tests
     uv run pytest --cov=src --cov-branch --cov-report=term-missing --cov-fail-under=85
 
-# Terraform dry-run
+# Terraform static validation (CI-safe, no credentials)
+validate-terraform:
+    cd infra/terraform && terraform fmt -check && terraform validate
+
+# Terraform dry-run (requires terraform.tfvars and OCI credentials)
 plan:
-    cd infra/terraform && terraform fmt -check && terraform validate && terraform plan -input=false
+    cd infra/terraform && terraform plan -input=false -var-file=terraform.tfvars
 
 # Terraform apply (requires explicit human approval)
 apply:
-    cd infra/terraform && terraform apply -input=false
+    cd infra/terraform && terraform apply -input=false -var-file=terraform.tfvars
 
 # Run the capacity runner (dry-run by default)
 capacity:
@@ -30,4 +34,4 @@ capacity:
 
 # Destroy infrastructure (requires explicit human approval)
 destroy:
-    cd infra/terraform && terraform destroy
+    cd infra/terraform && terraform destroy -var-file=terraform.tfvars
