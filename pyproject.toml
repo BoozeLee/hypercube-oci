@@ -55,6 +55,7 @@ select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
 include = ["src", "tests"]
 pythonVersion = "3.13"
 strict = ["src"]
+reportMissingTypeStubs = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
