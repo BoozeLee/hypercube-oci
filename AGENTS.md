@@ -54,3 +54,36 @@ refactoring of unrelated files.
 - Target VM is Ubuntu 24.04 aarch64.
 - Kimi Code CLI flags differ between old (`kimi-cli`) and new (`Kimi Code`)
   releases; check `kimi --help` before scripting any flag.
+
+<!-- coding-agents-repair:begin -->
+## Shared coding-agent workflow
+
+These instructions apply to Codex, Claude Code, Kimi Code, Crush, and Amp.
+- Inspect the repository's README, manifests, local instructions, and tests before editing.
+- Prefer small, scoped edits; preserve user changes and keep diffs reviewable.
+- Never commit secrets, credentials, `.env` files, or generated build artifacts.
+- Do not delete files, force-push, deploy, or change access controls without approval.
+- Follow the repository's existing build, lint, and test conventions. Run focused checks first.
+- Report exact checks performed, results, and any verification gaps.
+- Do not invent package commands or pretend a test was run.
+<!-- coding-agents-repair:end -->
+
+<!-- repo-evidence-harness:begin -->
+## Verified repository orientation
+
+> Auto-collected from repository-local filenames, manifests and README. Review these facts before treating them as project policy.
+
+- **README**: `README.md`; introductory text: A small, secure, reproducible host for AI agents on Oracle Cloud Infrastructure (Arm A1, Always Free tier), with an AgentMail email identity
+- **Root manifests**: `pyproject.toml`.
+- **Existing directories**: `src/`, `tests/`, `docs/`, `.github/workflows/`.
+
+### Commands supported by repository evidence
+
+Check prerequisites and command behavior before execution:
+
+- `uv run pytest` — pyproject.toml / tests directory; verify dependencies before running.
+
+### Source-of-truth rule
+
+Read the referenced manifests, CI workflows and README before changing architecture or running commands. Do not treat detected paths as proof of behavior.
+<!-- repo-evidence-harness:end -->

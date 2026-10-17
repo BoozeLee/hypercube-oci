@@ -8,6 +8,11 @@ variable "region" {
   description = "OCI home region for Always Free resources."
 }
 
+variable "oci_namespace" {
+  type        = string
+  description = "OCI Object Storage namespace for remote state backend."
+}
+
 variable "ssh_public_key" {
   type        = string
   description = "SSH public key for the hypercube admin user."

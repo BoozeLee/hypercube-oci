@@ -1,3 +1,16 @@
+terraform {
+  backend "s3" {
+    bucket                      = var.oci_namespace
+    key                         = "terraform.tfstate"
+    region                      = var.region
+    endpoint                    = "https://objectstorage.${var.region}.oraclecloud.com"
+    skip_region_validation      = true
+    skip_credentials_validation = true
+    skip_requesting_account_id  = true
+    skip_s3_checksum            = true
+  }
+}
+
 locals {
   common_tags = {
     Project     = "hypercube"
