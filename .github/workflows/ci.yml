@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Sync dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run lint
+        run: uv run ruff check src tests
+
+      - name: Run format check
+        run: uv run ruff format --check src tests
+
+      - name: Run type check
+        run: uv run pyright src tests
+
+      - name: Run tests with coverage
+        run: uv run pytest --cov=src --cov-branch --cov-report=xml --cov-report=term-missing --cov-fail-under=85
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  terraform:
+    name: Terraform
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init
+        run: cd infra/terraform && terraform init
+
+      - name: Terraform validate
+        run: cd infra/terraform && terraform validate
+
+      - name: Terraform fmt check
+        run: cd infra/terraform && terraform fmt -check
+
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run pip-audit
+        run: |
+          pip install pip-audit
+          pip-audit --format json --output pip-audit-results.json
+        continue-on-error: true
+
+      - name: Upload pip-audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-results
+          path: pip-audit-results.json
+        if: always()
+
+  cloud-init:
+    name: Cloud-init
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate cloud-init config
+        run: |
+          pip install jsonschema
+          python - <<'PYTHON'
+          import yaml
+          import json
+          from jsonschema import validate, ValidationError
+          
+          # Load cloud-init schema (simplified validation)
+          with open('infra/cloud-init/cloud-config.yaml', 'r') as f:
+              config = yaml.safe_load(f)
+          
+          # Basic validation
+          required_keys = ['package_update', 'package_upgrade']
+          for key in required_keys:
+              assert key in config, f"Missing required key: {key}"
+          
+          print("Cloud-init config validation passed")
+          PYTHON

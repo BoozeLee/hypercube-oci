@@ -1,10 +1,16 @@
 #cloud-config
+
+# Hypercube: cloud-init configuration for hardened Ubuntu 24.04 aarch64 instance
+# Implements hardening requirements from COMPLETENESS.md and AUDIT.md
+
 package_update: true
 package_upgrade: true
+
 packages:
+  - unattended-upgrades
+  - apt-listchanges
   - fail2ban
   - ufw
-  - unattended-upgrades
   - restic
   - curl
   - jq
@@ -13,8 +19,6 @@ users:
   - name: hypercube
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
-    ssh_authorized_keys:
-      - "${ssh_public_key}"
 
 ssh_pwauth: false
 chpasswd:
@@ -27,15 +31,81 @@ write_files:
       PasswordAuthentication no
       PubkeyAuthentication yes
       AuthenticationMethods publickey
+      AllowUsers hypercube
+      X11Forwarding no
+      AllowAgentForwarding no
+      ClientAliveInterval 300
+      ClientAliveCountMax 2
+    permissions: '0644'
+
+  - path: /etc/fail2ban/jail.local
+    content: |
+      [DEFAULT]
+      bantime = 3600
+      findtime = 600
+      maxretry = 5
+
+      [sshd]
+      enabled = true
+      port = ssh
+      filter = sshd
+      logpath = /var/log/auth.log
+
+      [sshd-ddos]
+      enabled = true
+      port = ssh
+      filter = sshd-ddos
+      logpath = /var/log/auth.log
     permissions: '0644'
 
 runcmd:
   - systemctl restart sshd
   - ufw default deny incoming
   - ufw default allow outgoing
-  - ufw allow from 10.0.0.0/16 to any port 22 proto tcp
+  - ufw allow 22/tcp
   - ufw --force enable
   - systemctl enable fail2ban
   - systemctl start fail2ban
   - systemctl enable unattended-upgrades
   - systemctl start unattended-upgrades
+
+  - |
+    cat > /etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
+    APT::Periodic::Update-Package-Lists "1";
+    APT::Periodic::Unattended-Upgrade "1";
+    APT::Periodic::AutocleanInterval "7";
+    EOF
+
+  - |
+    cat > /etc/apt/apt.conf.d/50unattended-upgrades <<'EOF'
+    Unattended-Upgrade::Allowed-Origins {
+      "${distro_id}:${distro_codename}-security";
+    };
+    Unattended-Upgrade::Automatic-Reboot "true";
+    Unattended-Upgrade::Automatic-Reboot-Time "02:00";
+    EOF
+
+  - |
+    cat > /etc/sysctl.d/99-disable-ipv6.conf <<'EOF'
+    net.ipv6.conf.all.disable_ipv6 = 1
+    net.ipv6.conf.default.disable_ipv6 = 1
+    net.ipv6.conf.lo.disable_ipv6 = 1
+    EOF
+  - sysctl -p /etc/sysctl.d/99-disable-ipv6.conf
+
+  - |
+    cat > /etc/sysctl.d/99-network-hardening.conf <<'EOF'
+    net.ipv4.tcp_syncookies = 1
+    net.ipv4.tcp_max_syn_backlog = 2048
+    net.ipv4.tcp_synack_retries = 2
+    net.ipv4.conf.all.rp_filter = 1
+    net.ipv4.conf.default.rp_filter = 1
+    EOF
+  - sysctl -p /etc/sysctl.d/99-network-hardening.conf
+
+final_message: |
+  Hypercube instance hardening complete.
+  SSH: root login disabled, password auth disabled, key-only access.
+  Firewall: UFW enabled with default deny incoming.
+  Fail2Ban: SSH protection enabled.
+  Updates: Unattended security updates configured.
